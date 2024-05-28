@@ -1,6 +1,6 @@
-import type { EntityDTO } from '@shared/entities/entity.dto';
+import type { EntityDTO } from '@shared/core/entities/entity.dto';
 
-export interface MeetDTO extends EntityDTO {
+export interface MeetingDTO extends EntityDTO {
   meetingDate: string;
   meetingPoint: string;
   participants: string[];

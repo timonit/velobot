@@ -1,7 +1,7 @@
-import { Entity } from '@shared/entities/entity';
-import type { MeetDTO } from './meeting.dto';
+import { Entity } from '@shared/core/entities/entity';
+import type { MeetingDTO } from './meeting.dto';
 
-export class Meet extends Entity<MeetDTO>{
+export class Meeting extends Entity<MeetingDTO>{
   get meetingDate(): Date {
     return new Date(this.dto.meetingDate);
   }
