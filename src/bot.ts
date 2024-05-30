@@ -1,6 +1,8 @@
-import "reflect-metadata";
-import { CreateMeetingFeature } from '@features/create-meet/create-meeting.feature';
-import './infra/repos/meeting.repo';
+import 'reflect-metadata';
+import { MeetingRepo } from '@infra';
 
-const feature = CreateMeetingFeature.instace();
-console.log('feature', feature);
+class Bot {
+  repos = {
+    MeetingRepo
+  };
+}

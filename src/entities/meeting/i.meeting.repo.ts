@@ -1,7 +1,7 @@
 import type { ID } from '@shared/core';
 import type { MeetingDTO } from './meeting.dto';
 
-type AddMeetingDTO = {
+export type AddMeetingDTO = {
   meetingDate: string;
   meetingPoint?: string;
   participants?: string[];

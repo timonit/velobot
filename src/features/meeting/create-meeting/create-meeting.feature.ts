@@ -16,9 +16,7 @@ export class CreateMeetingFeature extends Feature {
   @inject(injectMeetingToken)
   meetingRepo!: IMeetingRepo;
 
-  execute(): void {
-    console.log(this.meetingRepo);
-    // const MeetingDTO = ();
-    // const meeting = Meeting.instace();
+  execute(dto: CreateMeetingFeatureDTO): void {
+    const meetingDTO = this.meetingRepo.add(dto);
   }
 }

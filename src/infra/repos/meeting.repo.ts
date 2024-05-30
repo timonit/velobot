@@ -1,16 +1,34 @@
 import type { MeetingDTO } from '@entities';
-import { type IMeetingRepo, injectMeetingToken } from '@entities/meeting/i.meeting.repo';
+import type { IMeetingRepo, AddMeetingDTO } from '@entities/meeting/i.meeting.repo';
+import { injectMeetingToken } from '@entities/meeting/i.meeting.repo';
 import { injectable } from '@shared/core/injectable';
 
 @injectable(injectMeetingToken)
 export class MeetingRepo implements IMeetingRepo {
+  data: {[p: string]: MeetingDTO} = {};
+
   get(id: string): MeetingDTO {
-    throw new Error('Method not implemented.');
+    const item = this.data[id];
+    return item ?? undefined;
   }
-  add(dto: { meetingDate: string; meetingPoint?: string | undefined; participants?: string[] | undefined; title: string; description?: string | undefined; creater: string; }): MeetingDTO {
-    throw new Error('Method not implemented.');
+
+  add(dto: AddMeetingDTO): MeetingDTO {
+    const id = Date.now().toString();
+    const meetingDTO: MeetingDTO = {
+      ...dto,
+      meetingPoint: dto.meetingPoint ?? '',
+      participants: dto.participants ?? [],
+      description: dto.description ?? '',
+      id,
+      createdAt: new Date().toLocaleString(),
+    }
+
+    this.data[id] = meetingDTO;
+
+    return this.data[id];
   }
+  
   delete(id: string): void {
-    throw new Error('Method not implemented.');
+    delete this.data[id];
   }
 }

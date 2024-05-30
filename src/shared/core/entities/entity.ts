@@ -1,3 +1,4 @@
+import { injectable } from '../injectable';
 import type { EntityDTO } from './entity.dto';
 import type { GetEntityDTO } from './utils/get-entity-dto';
 
@@ -16,6 +17,17 @@ export abstract class Entity<T extends EntityDTO> {
     this: new (dto: GetEntityDTO<T>) => T,
     dto: GetEntityDTO<T>
   ): T {
-    return new this(dto);
+    const instance = new this(dto);
+    const keys = Reflect.getMetadataKeys(instance);
+
+    keys.forEach((key) => {
+      const prop = Reflect.getMetadata(key, instance);
+      const ctr = Reflect.getMetadata(key, injectable);
+
+      // @ts-ignore
+      instance[prop] = new ctr();
+    });
+
+    return instance;
   }
 }
