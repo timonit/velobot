@@ -3,7 +3,7 @@ import { type IMeetingRepo, injectMeetingToken } from '@entities/meeting/i.meeti
 import { Feature } from '@shared/core/features';
 import { inject } from '@shared/core/inject';
 
-type CreateMeetingFeatureDTO = {
+export type CreateMeetingFeatureDTO = {
   meetingDate: string;
   meetingPoint?: string;
   participants?: string[];
