@@ -1,13 +1,6 @@
 import 'reflect-metadata';
-import { MeetingRepo } from '@infra';
 import { Bot } from 'grammy';
 import { CreateMeetingFeature } from '@features/meeting';
-
-class App {
-  repos = {
-    MeetingRepo
-  };
-}
 
 const bot = new Bot(process.env.BOT_TOKEN);
 
@@ -30,15 +23,15 @@ bot.on("message::url", (ctx) => {
   ctx.reply('Автоответчик')
 });
 
-await bot.api.setMyCommands([
-  { command: "start", description: "Start the bot" },
-  { command: "create_meeting", description: "Create meeting" },
-]);
 
 
-// Start the bot.
 bot.start({
-  onStart(info) {
-    console.log('Bot started')
+  async onStart(info) {
+    console.log('Bot started');
+    
+    await bot.api.setMyCommands([
+      { command: "start", description: "Start the bot" },
+      { command: "create_meeting", description: "Create meeting" },
+    ]);
   }
 });
