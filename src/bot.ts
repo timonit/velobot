@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Bot } from 'grammy';
-import { CreateMeetingFeature } from '@features/meeting';
+import { CreateMeetingFeature, type CreateMeetingFeatureDTO } from '@features/meeting';
 import '@infra';
 
 const unnamed = 'Без названия';
@@ -9,36 +9,31 @@ const bot = new Bot(process.env.BOT_TOKEN);
 
 bot.command("start", (ctx) => ctx.reply("timon send hi!"));
 
-bot.command('create_meeting', async (ctx) => {
+// bot.command('create_meeting', async (ctx) => {
+//   ctx.reply(JSON.stringify(meeting), {
+//     reply_markup: {
+//       keyboard: [
+//         [{
+//           text: 'asdad',
+//           web_app: {
+//             url: 'https://timonit.github.io/velobot/public/'
+//           }
+//         }]
+//       ]
+//     }
+//   });
+// });
+
+bot.on("message:web_app_data", (ctx) => {
+  const data = JSON.parse(ctx.msg.web_app_data.data) as CreateMeetingFeatureDTO;
   const feature = CreateMeetingFeature.instace();
-  const title = ctx.match || unnamed;
-  const author = await ctx.getAuthor();
 
-  const meeting = feature.execute({
-    title,
-    meetingDate: new Date().toLocaleString(),
-    creater: author.user.id.toString()
-  });
+  const meeting = feature.execute(data);
 
-  ctx.reply(JSON.stringify(meeting), {
-    reply_markup: {
-      keyboard: [
-        [{
-          text: 'asdad',
-          web_app: {
-            url: 'https://timonit.github.io/velobot/public/'
-          }
-        }]
-      ]
-    }
-  });
-});
-
-bot.on("message", (ctx) => {
-  console.log('\n===== msg =====');
-  console.log('ctx', ctx);
-  console.log('===== end msg ===== \n');
-  ctx.reply('Автоответчик');
+  console.log('\n===== create meeting data =====');
+  console.log(data);
+  console.log('===== end data ===== \n');
+  ctx.reply(JSON.stringify(meeting));
 });
 
 
@@ -49,7 +44,7 @@ bot.start({
     
     await bot.api.setMyCommands([
       { command: "start", description: "Start the bot" },
-      { command: "create_meeting", description: "Create meeting" },
+      // { command: "create_meeting", description: "Create meeting" },
     ]);
   }
 });
