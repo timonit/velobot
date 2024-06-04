@@ -4,17 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
+  <link href="./style.css" rel="stylesheet" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <form>
-    <label>Timon</label>
-    <input placeholder="timon" />
+  <form id="meeting_form">
+    <label>Создание встречи</label>
+    
+    <input placeholder="Название" type="text" required name="title" />
+    <input placeholder="Дата встречи" type="datetime-local" required name="meetingDate" />
+    <input placeholder="Место встречи" name="meetingPoint" />
+    <textarea placeholder="Описание" name="description" rows="3" ></textarea>
+
+    <div class="footer">
+      <button type="submit" class="success">Создать</button>
+      <!-- <button type="button" id="cancel" class="danger">Отмена</button> -->
+    </div>
+
   </form>
 
-  <script>
-    const tg = window.telegram;
-    console.log('telegram', tg);
-  </script>
+  <script src="./main.js"></script>
 </body>
 </html>
