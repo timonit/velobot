@@ -9,7 +9,7 @@ function sendForm() {
     data[key] = value;
   });
 
-  Telegram.sendData(JSON.stringify(data));
+  Telegram.WebApp.sendData(JSON.stringify(data));
 }
 
 form.addEventListener('submit', sendForm);
