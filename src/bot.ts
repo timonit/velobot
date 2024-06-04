@@ -20,7 +20,18 @@ bot.command('create_meeting', async (ctx) => {
     creater: author.user.id.toString()
   });
 
-  ctx.reply(JSON.stringify(meeting));
+  ctx.reply(JSON.stringify(meeting), {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: 'asdad',
+          web_app: {
+            url: 'https://timonit.github.io/velobot/public/'
+          }
+        }]
+      ]
+    }
+  });
 });
 
 bot.on("message", (ctx) => {
