@@ -3,9 +3,11 @@ import type { IMeetingRepo, AddMeetingDTO } from '@entities/meeting/i.meeting.re
 import { injectMeetingToken } from '@entities/meeting/i.meeting.repo';
 import { injectable } from '@shared/core/injectable';
 
+const data = {};
+
 @injectable(injectMeetingToken)
 export class MeetingRepo implements IMeetingRepo {
-  data: {[p: string]: MeetingDTO} = {};
+  data: {[p: string]: MeetingDTO} = data;
 
   get(id: string): MeetingDTO {
     const item = this.data[id];
