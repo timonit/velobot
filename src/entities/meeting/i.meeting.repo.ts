@@ -4,10 +4,10 @@ import type { MeetingDTO } from './meeting.dto';
 export type AddMeetingDTO = {
   meetingDate: string;
   meetingPoint?: string;
-  participants?: string[];
+  participants?: number[];
   title: string;
   description?: string;
-  creater: string;
+  creater: number;
 }
 
 export interface IMeetingRepo {

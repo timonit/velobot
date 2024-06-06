@@ -3,7 +3,7 @@ import type { IMeetingRepo, AddMeetingDTO } from '@entities/meeting/i.meeting.re
 import { injectMeetingToken } from '@entities/meeting/i.meeting.repo';
 import { injectable } from '@shared/core/injectable';
 
-const data = {};
+const data: {[p: string]: MeetingDTO} = {};
 
 @injectable(injectMeetingToken)
 export class MeetingRepo implements IMeetingRepo {
@@ -32,5 +32,11 @@ export class MeetingRepo implements IMeetingRepo {
   
   delete(id: string): void {
     delete this.data[id];
+  }
+
+  patch(dto: MeetingDTO): MeetingDTO {
+    this.data[dto.id] = dto;
+
+    return this.data[dto.id];
   }
 }
