@@ -1,19 +1,20 @@
 import type { ID } from '@shared/core';
 import type { MeetingDTO } from './meeting.dto';
+import type { User } from 'grammy/types';
 
 export type AddMeetingDTO = {
   meetingDate: string;
   meetingPoint?: string;
-  participants?: number[];
+  participants?: User[];
   title: string;
   description?: string;
-  creater: number;
+  creater: User;
 }
 
 export interface IMeetingRepo {
-  get(id: ID): MeetingDTO;
+  get(id: MeetingDTO['id']): MeetingDTO;
   add(dto: AddMeetingDTO): MeetingDTO;
-  delete(id: ID): void;
+  delete(id: MeetingDTO['id']): void;
 }
 
 export const injectMeetingToken = Symbol();
