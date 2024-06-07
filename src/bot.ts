@@ -2,23 +2,25 @@ import 'reflect-metadata';
 import '@infra';
 import { Bot, InlineKeyboard } from 'grammy';
 import { CreateMeetingFeature } from '@features/meeting';
-import { MeetingRepo } from '@infra';
+import { GroupRepo, MeetingRepo } from '@infra';
 import { Meeting } from '@entities';
 import { MSGS, KEYBOARDS } from '@shared/constants';
 import { textToNotifyCreateMeeting } from '@shared/text/text-to-notify-create-meeting';
 
-const group = 'velikgroup';
+// const group = 'velikgroup';
 
 const bot = new Bot(process.env.BOT_TOKEN);
 
 const buttons = new InlineKeyboard()
-    .text('Присоединится', 'join to meeting')
-    .text('Отказаться', 'cancel');
+  .text('Присоединится', 'join to meeting')
+  .text('Отказаться', 'cancel');
 
-bot.command("start", (ctx) => {
+bot.chatType('private').command("start", async (ctx) => {
   console.log('start', ctx.update);
+  console.log('=== === ===');
+
   if (ctx.chat.type === 'private') {
-    ctx.reply(MSGS.GREETING, {
+    ctx.reply(MSGS.GREETING+`\n\nЧто бы создавать встречи в группе, перейдите в целевую группу, добавьте меня и напишите в чат /start@${bot.botInfo.username}`, {
       reply_markup: {
         resize_keyboard: true,
         keyboard: [
@@ -34,21 +36,44 @@ bot.command("start", (ctx) => {
   }
 });
 
-bot.on("message:web_app_data", async (ctx) => {
-  const data = JSON.parse(ctx.msg.web_app_data.data);
-  const feature = CreateMeetingFeature.instace();
+bot.chatType(['group', 'supergroup', 'channel']).command('start', async (ctx) => {
+  console.log('start group', ctx.update);
+  const user = ctx.from;
+  const chat = ctx.chat;
 
-  const meeting = feature.execute({ creater: ctx.from.id, participants: [ctx.from.id], ...data});
-  console.log('meetingRepo', ctx.update)
+  const groupRepo = new GroupRepo();
+  groupRepo.set(user.id, chat);
+  
+  ctx.reply(`Теперь пользователь ${user.username ? `@${user.username}` : user.first_name } ассоциируется с этой группой(@${chat.username}) и может создавать встречи.\nОдин Пользователь может быть связан только с одной группой.`);
+});
+
+bot.on("message:web_app_data", async (ctx) => {
+  const groupRepo = new GroupRepo();
+  const creater = ctx.from;
+  const group = groupRepo.get(creater.id);
+  if (!group) {
+    ctx.reply(`У вас нет привязаной группы.\nЗайдите в группу и напишите /start@${bot.botInfo.username}`);
+    return;
+  }
+
+  const data = JSON.parse(ctx.msg.web_app_data.data);
+  const createMeeting = CreateMeetingFeature.instace();
+
+  const meeting = createMeeting.execute({ creater, participants: [creater], ...data});
+  console.log('Created meeting', meeting)
 
   ctx.reply(
-    `${MSGS.MEETING_CREATE_SUCCESS}\n${meeting.dto.title}`,
+    `${MSGS.MEETING_CREATE_SUCCESS}\n\n${meeting.dto.title}\n\nid: ${meeting.id}`,
     { parse_mode: 'HTML' }
   );
+  
+  const text = textToNotifyCreateMeeting(meeting);
+  const res = await bot.api.sendMessage(`@${group.username}`, text, { reply_markup: buttons, parse_mode: 'HTML' });
 
-  const text = await textToNotifyCreateMeeting(bot, meeting);
+  meeting.setChatId(res.chat.id);
+  meeting.setMessageId(res.message_id);
 
-  bot.api.sendMessage(`@${group}`, text, { reply_markup: buttons, parse_mode: 'HTML' });
+  await bot.api.pinChatMessage(res.chat.id, res.message_id);
 });
 
 bot.callbackQuery('join to meeting', async (ctx) => {
@@ -56,12 +81,12 @@ bot.callbackQuery('join to meeting', async (ctx) => {
   const meetingDTO = repo.get(ctx.entities('italic')[0].text);
   const meeting = Meeting.instace(meetingDTO);
   
-  if ( meeting.dto.participants.indexOf(ctx.from.id) >= 0 ) return;
+  if ( meeting.hasParticipant(ctx.from) ) return;
 
-  meeting.setParticipants([ctx.from.id]);
+  meeting.setParticipants([ctx.from]);
   repo.patch(meeting.dto);
 
-  const text = await textToNotifyCreateMeeting(bot, meeting);
+  const text = textToNotifyCreateMeeting(meeting);
   ctx.editMessageText(text, { reply_markup: buttons, parse_mode: 'HTML'});
 });
 
@@ -70,12 +95,12 @@ bot.callbackQuery('cancel', async (ctx) => {
   const meetingDTO = repo.get(ctx.entities('italic')[0].text);
   const meeting = Meeting.instace(meetingDTO);
 
-  if ( meeting.dto.participants.indexOf(ctx.from.id) < 0 ) return;
+  if ( !meeting.hasParticipant(ctx.from.id) ) return;
   
   meeting.removeParticipant(ctx.from.id);
   repo.patch(meeting.dto);
 
-  const text = await textToNotifyCreateMeeting(bot, meeting);
+  const text = textToNotifyCreateMeeting(meeting);
   ctx.editMessageText(text, { reply_markup: buttons, parse_mode: 'HTML'});
 });
 
@@ -94,7 +119,7 @@ bot.catch((err) => {
 
 bot.start({
   async onStart(info) {
-    console.log('Bot started');
+    console.log('Bot started\n==========\n\n');
     
     await bot.api.setMyCommands([
       { command: "start", description: "Start the bot" },
