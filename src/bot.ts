@@ -6,6 +6,7 @@ import { GroupRepo, MeetingRepo } from '@infra';
 import { Meeting } from '@entities';
 import { MSGS, KEYBOARDS } from '@shared/constants';
 import { textToNotifyCreateMeeting } from '@shared/text/text-to-notify-create-meeting';
+import { RejectMeetingFeature } from './features/meeting/reject-meeting/reject-meeting.feature';
 
 // const group = 'velikgroup';
 
@@ -14,6 +15,10 @@ const bot = new Bot(process.env.BOT_TOKEN);
 const buttons = new InlineKeyboard()
   .text('Присоединится', 'join to meeting')
   .text('Отказаться', 'cancel');
+
+
+const controlMeetingButtons = new InlineKeyboard()
+  .text('Удалить встречу', 'reject meeting');
 
 bot.chatType('private').command("start", async (ctx) => {
   console.log('start', ctx.update);
@@ -60,11 +65,11 @@ bot.on("message:web_app_data", async (ctx) => {
   const createMeeting = CreateMeetingFeature.instace();
 
   const meeting = createMeeting.execute({ creater, participants: [creater], ...data});
-  console.log('Created meeting', meeting)
+  console.log('Created', meeting)
 
   ctx.reply(
-    `${MSGS.MEETING_CREATE_SUCCESS}\n\n${meeting.dto.title}\n\nid: ${meeting.id}`,
-    { parse_mode: 'HTML' }
+    `${MSGS.MEETING_CREATE_SUCCESS}\n\n${meeting.dto.title}\n\nid: <i>${meeting.id}</i>`,
+    { reply_markup: controlMeetingButtons, parse_mode: 'HTML' }
   );
   
   const text = textToNotifyCreateMeeting(meeting);
@@ -102,6 +107,21 @@ bot.callbackQuery('cancel', async (ctx) => {
 
   const text = textToNotifyCreateMeeting(meeting);
   ctx.editMessageText(text, { reply_markup: buttons, parse_mode: 'HTML'});
+});
+
+bot.callbackQuery('reject meeting', async (ctx) => {
+  const rejectMeeting = RejectMeetingFeature.instace();
+  const meetingId = ctx.entities('italic')[0].text;
+  const meetingRepo = new MeetingRepo();
+  const meeting = meetingRepo.get(meetingId);
+
+  rejectMeeting.execute(meetingId);
+
+  if (meeting.chatId && meeting.messageId) {
+    await bot.api.deleteMessage(meeting.chatId, meeting.messageId);
+  }
+
+  await ctx.editMessageText(`(Удалена)\n${ctx.msg?.text}`, { parse_mode: 'HTML'});
 });
 
 bot.on(':new_chat_members:me', (ctx) => {
