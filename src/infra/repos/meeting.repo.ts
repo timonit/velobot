@@ -14,6 +14,10 @@ export class MeetingRepo implements IMeetingRepo {
     return item ?? undefined;
   }
 
+  getAll(): MeetingDTO[] {
+    return Object.values(this.data);
+  }
+
   add(dto: AddMeetingDTO): MeetingDTO {
     const id = Date.now().toString();
     const meetingDTO: MeetingDTO = {
