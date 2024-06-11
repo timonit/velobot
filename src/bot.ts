@@ -23,11 +23,18 @@ const checkDateNotification = (currentDate: Date, meeting: Meeting, ms: number):
   return result;
 }
 
+const sendNotificationByMeeting = async (meeting: Meeting, message: string) => {
+  const chat = await bot.api.getChat(meeting.dto.chatId as number)
+  try {
+    await bot.api.sendMessage(`@${chat.username}`, message);
+  }
+  catch(err) {console.error(err);}
+}
+
 const executeTasksByTime = () => {
   const result = meetingRepo.getAll();
   const needToDelete: {[p: number]: Meeting[]} = {};
   const currentDate = new Date();
-  console.log('executeTasksByTime', currentDate)
 
   result.forEach((meetingDTO) => {
     const meeting = Meeting.instace(meetingDTO);
@@ -41,46 +48,27 @@ const executeTasksByTime = () => {
     }
 
     if (checkDateNotification(currentDate, meeting, day*3)) {
-      console.log('3 day')
-      bot.api.getChat(meeting.dto.chatId as number)
-        .then(async (chat) => {
-          try {
-            await bot.api.sendMessage(
-              `@${chat.username}`,
-              `Напоминание!\n\n${meeting.dto.title}\nЧерез 3 дня состоиться встреча.`
-            );
-          }
-          catch(err) {console.error(err);}
-        });
+      sendNotificationByMeeting(
+        meeting,
+        `Напоминание!\n\n${meeting.dto.title}\n\nЧерез 3 дня состоиться встреча.`
+      );
     } else if (checkDateNotification(currentDate, meeting, day)) {
-      console.log('1 day')
-      bot.api.getChat(meeting.dto.chatId as number)
-        .then(async (chat) => {
-          try {
-            bot.api.sendMessage(
-              `@${chat.username}`,
-              `Напоминание!\n\n${meeting.dto.title}\nЧерез 1 день состоиться встреча.`
-            );
-          } catch(err) {console.error(err)};
-        });
+      sendNotificationByMeeting(
+        meeting,
+        `Напоминание!\n\n${meeting.dto.title}\n\nЧерез 1 день состоиться встреча.`
+      );
     } else if (checkDateNotification(currentDate, meeting, hour*3)) {
-      console.log('3 hour')
-      bot.api.getChat(meeting.dto.chatId as number)
-        .then(async (chat) => {
-          try {
-            bot.api.sendMessage(
-              `@${chat.username}`,
-              `Напоминание!\n\n${meeting.dto.title}\nЧерез 3 часа состоиться встреча.`
-            );
-          } catch(err){console.error(err)};
-        });
+      sendNotificationByMeeting(
+        meeting,
+        `Напоминание!\n\n${meeting.dto.title}\n\nЧерез 3 часа состоиться встреча.`
+      );
     }
   });
 
   const entries = Object.entries(needToDelete) as unknown as [number, Meeting[]][];
   if (entries.length) {
-    entries.forEach(([key, meetings]) => {
-      bot.api.getChat(key)
+    entries.forEach(([chatId, meetings]) => {
+      bot.api.getChat(chatId)
         .then(async (chat) => {
           try {
             await bot.api.deleteMessages(
@@ -93,7 +81,7 @@ const executeTasksByTime = () => {
   }
 }
 
-const job = new CronJob('20 * * * *', executeTasksByTime);
+const job = new CronJob('25 * * * *', executeTasksByTime);
 job.start();
 
 
