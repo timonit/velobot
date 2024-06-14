@@ -17,8 +17,8 @@ export class CreateMeetingFeature extends Feature {
   @inject(injectMeetingToken)
   meetingRepo!: IMeetingRepo;
 
-  execute(dto: CreateMeetingFeatureDTO): Meeting {
-    const meetingDTO = this.meetingRepo.add(dto);
+  async execute(dto: CreateMeetingFeatureDTO): Promise<Meeting> {
+    const meetingDTO = await this.meetingRepo.add(dto);
     return new Meeting(meetingDTO);
   }
 }

@@ -3,7 +3,11 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "start": "bun run src/bot.ts"
+    "start": "bun run src/bot.ts",
+    "generate": "bun prisma generate --schema=src/infra/repos/entities/schema.prisma"
+  },
+  "prisma": {
+    "schema": "src/infra/repos/entities"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -17,6 +21,7 @@
     "dayjs": "^1.11.11",
     "grammy": "^1.24.0",
     "lodash": "^4.17.21",
+    "mongodb": "^5.9.2",
     "reflect-metadata": "^0.2.2"
   }
 }
