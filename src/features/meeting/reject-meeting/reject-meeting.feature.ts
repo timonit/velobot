@@ -7,7 +7,7 @@ export class RejectMeetingFeature extends Feature {
   @inject(injectMeetingToken)
   meetingRepo!: IMeetingRepo;
 
-  execute(meetingId: ID): void {
-    this.meetingRepo.delete(meetingId);
+  async execute(meetingId: ID): Promise<void> {
+    await this.meetingRepo.delete(meetingId);
   }
 }

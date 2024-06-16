@@ -23,6 +23,7 @@
     "emitDecoratorMetadata": true,
     "paths": {
       "@*": ["./src/*"]
-    }
+    },
+    "types": ["./src/infra/repos/**/*.d.ts"]
   }
 }

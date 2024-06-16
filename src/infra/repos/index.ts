@@ -1,2 +1,2 @@
-export * from './meeting.repo';
-export * from './group.repo';
+export * from './meeting';
+export * from './group';

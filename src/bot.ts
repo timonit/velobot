@@ -31,8 +31,8 @@ const sendNotificationByMeeting = async (meeting: Meeting, message: string) => {
   catch(err) {console.error(err);}
 }
 
-const executeTasksByTime = () => {
-  const result = meetingRepo.getAll();
+const executeTasksByTime = async () => {
+  const result = await meetingRepo.get({});
   const needToDelete: {[p: number]: Meeting[]} = {};
   const currentDate = new Date();
 
@@ -81,7 +81,7 @@ const executeTasksByTime = () => {
   }
 }
 
-const job = new CronJob('25 * * * *', executeTasksByTime);
+const job = new CronJob('0 * * * *', executeTasksByTime);
 job.start();
 
 
@@ -97,7 +97,7 @@ bot.chatType('private').command("start", async (ctx) => {
   // console.log('=== === ===');
 
   if (ctx.chat.type === 'private') {
-    ctx.reply(MSGS.GREETING+`\n\nЧто бы создавать встречи в группе, перейдите в целевую группу, добавьте меня и напишите в чат /start@${bot.botInfo.username}`, {
+    await ctx.reply(MSGS.GREETING+`\n\nЧто бы создавать встречи в группе, перейдите в целевую группу, добавьте меня и напишите в чат /start@${bot.botInfo.username}`, {
       reply_markup: {
         resize_keyboard: true,
         keyboard: [
@@ -114,18 +114,17 @@ bot.chatType('private').command("start", async (ctx) => {
 });
 
 bot.chatType(['group', 'supergroup', 'channel']).command('start', async (ctx) => {
-  // console.log('start group', ctx.update);
   const user = ctx.from;
   const chat = ctx.chat;
 
-  groupRepo.set(user.id, chat);
+  await groupRepo.set(user.id, chat);
   
-  ctx.reply(`Теперь пользователь ${user.username ? `@${user.username}` : user.first_name } ассоциируется с этой группой(@${chat.username}) и может создавать встречи.\nОдин Пользователь может быть связан только с одной группой.`);
+  await ctx.reply(`Теперь пользователь ${user.username ? `@${user.username}` : user.first_name } ассоциируется с этой группой(@${chat.username}) и может создавать встречи.\nОдин Пользователь может быть связан только с одной группой.`);
 });
 
 bot.on("message:web_app_data", async (ctx) => {
   const creater = ctx.from;
-  const group = groupRepo.get(creater.id);
+  const group = await groupRepo.get(creater.id);
   if (!group) {
     ctx.reply(`У вас нет привязаной группы.\nЗайдите в группу и напишите /start@${bot.botInfo.username}`);
     return;
@@ -134,38 +133,38 @@ bot.on("message:web_app_data", async (ctx) => {
   const data = JSON.parse(ctx.msg.web_app_data.data);
   const createMeeting = CreateMeetingFeature.instace();
 
-  const meeting = createMeeting.execute({ creater, participants: [creater], ...data});
-  // console.log('Created', meeting)
+  const meeting = await createMeeting.execute({ creater, participants: [creater], ...data});
 
-  ctx.reply(
+  await ctx.reply(
     `${MSGS.MEETING_CREATE_SUCCESS}\n\n${meeting.dto.title}\n\nid: <i>${meeting.id}</i>`,
     { reply_markup: controlMeetingButtons, parse_mode: 'HTML' }
   );
   
   const text = textToNotifyCreateMeeting(meeting);
-  const res = await bot.api.sendMessage(`@${group.username}`, text, { reply_markup: buttons, parse_mode: 'HTML' });
+  const res = await bot.api.sendMessage(group.id, text, { reply_markup: buttons, parse_mode: 'HTML' });
 
-  meeting.setChatId(res.chat.id);
+  meeting.setChatId(group.id);
   meeting.setMessageId(res.message_id);
+  await meetingRepo.patch(meeting.dto);
 
-  await bot.api.pinChatMessage(res.chat.id, res.message_id);
+  await bot.api.pinChatMessage(group.id, res.message_id);
 });
 
 bot.callbackQuery('join to meeting', async (ctx) => {
-  const meetingDTO = meetingRepo.get(ctx.entities('italic')[0].text);
+  const meetingDTO = (await meetingRepo.get({id: ctx.entities('italic')[0].text}))[0];
   const meeting = Meeting.instace(meetingDTO);
   
   if ( meeting.hasParticipant(ctx.from) ) return;
 
   meeting.setParticipants([ctx.from]);
-  meetingRepo.patch(meeting.dto);
+  await meetingRepo.patch(meeting.dto);
 
   const text = textToNotifyCreateMeeting(meeting);
-  ctx.editMessageText(text, { reply_markup: buttons, parse_mode: 'HTML'});
+  await ctx.editMessageText(text, { reply_markup: buttons, parse_mode: 'HTML'});
 });
 
 bot.callbackQuery('cancel', async (ctx) => {
-  const meetingDTO = meetingRepo.get(ctx.entities('italic')[0].text);
+  const meetingDTO = (await meetingRepo.get({id: ctx.entities('italic')[0].text}))[0];
   const meeting = Meeting.instace(meetingDTO);
 
   if ( !meeting.hasParticipant(ctx.from.id) ) return;
@@ -174,15 +173,15 @@ bot.callbackQuery('cancel', async (ctx) => {
   meetingRepo.patch(meeting.dto);
 
   const text = textToNotifyCreateMeeting(meeting);
-  ctx.editMessageText(text, { reply_markup: buttons, parse_mode: 'HTML'});
+  await ctx.editMessageText(text, { reply_markup: buttons, parse_mode: 'HTML'});
 });
 
 bot.callbackQuery('reject meeting', async (ctx) => {
   const rejectMeeting = RejectMeetingFeature.instace();
   const meetingId = ctx.entities('italic')[0].text;
-  const meeting = meetingRepo.get(meetingId);
+  const meeting = (await meetingRepo.get({id: meetingId}))[0];
 
-  rejectMeeting.execute(meetingId);
+  await rejectMeeting.execute(meetingId);
 
   if (meeting.chatId && meeting.messageId) {
     await bot.api.deleteMessage(meeting.chatId, meeting.messageId);
@@ -191,8 +190,8 @@ bot.callbackQuery('reject meeting', async (ctx) => {
   await ctx.editMessageText(`(Удалена)\n${ctx.msg?.text}`, { parse_mode: 'HTML'});
 });
 
-bot.on(':new_chat_members:me', (ctx) => {
-  ctx.reply('hi peaple')
+bot.on(':new_chat_members:me', async (ctx) => {
+  await ctx.reply('hi peaple')
   console.log('ctx', ctx.update);
 });
 
