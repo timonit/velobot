@@ -1,6 +1,7 @@
 import { injectable } from '@shared/core/injectable';
 import type { Chat } from 'grammy/types';
 import { Repo } from '@shared/infra';
+import { ObjectId } from 'mongodb';
 
 @injectable('group')
 export class GroupRepo extends Repo {
@@ -20,10 +21,9 @@ export class GroupRepo extends Repo {
   async set(userId: any, chat: Chat): Promise<void> {
     try {
       await this.client.connect();
-      await this.collection.insertOne({
-        userId,
-        ...chat,
-      });
+      await this.collection.deleteMany({userId});
+
+      await this.collection.insertOne({ ...chat, userId });
     }
     finally {
       await this.client.close();

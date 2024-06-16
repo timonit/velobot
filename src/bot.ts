@@ -141,13 +141,13 @@ bot.on("message:web_app_data", async (ctx) => {
   );
   
   const text = textToNotifyCreateMeeting(meeting);
-  const res = await bot.api.sendMessage(`@${group.username}`, text, { reply_markup: buttons, parse_mode: 'HTML' });
+  const res = await bot.api.sendMessage(group.id, text, { reply_markup: buttons, parse_mode: 'HTML' });
 
-  meeting.setChatId(res.chat.id);
+  meeting.setChatId(group.id);
   meeting.setMessageId(res.message_id);
   await meetingRepo.patch(meeting.dto);
 
-  await bot.api.pinChatMessage(res.chat.id, res.message_id);
+  await bot.api.pinChatMessage(group.id, res.message_id);
 });
 
 bot.callbackQuery('join to meeting', async (ctx) => {
